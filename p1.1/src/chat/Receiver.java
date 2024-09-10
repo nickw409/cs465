@@ -20,7 +20,7 @@ public class Receiver extends Thread{
         }
         catch (IOException ex)
         {
-            Logger.getLogger(Receiver.class.getName()).log(Level.SEVERE, "Creating Reciever socket Failed", ex);
+            Logger.getLogger(Receiver.class.getName()).log(Level.SEVERE, "Creating Receiver socket Failed", ex);
         }
     }
 
@@ -36,7 +36,7 @@ public class Receiver extends Thread{
             }
             catch(IOException e)
             {
-                System.err.println("Reciever run: error acception client");
+                System.err.println("Receiver run: error acception client");
             }
         }
     }

@@ -32,10 +32,12 @@ public class ReceiverWorker extends Thread {
         {
             readFromNet = new ObjectInputStream(serverConnection.getInputStream());
             writeToNet = new ObjectOutputStream(serverConnection.getOutputStream());
+
+            message = (Message)readFromNet.readObject();
         }
-        catch(IOException ex)
+        catch(IOException | ClassNotFoundException ex)
         {
-            Logger.getLogger(ReceiverWorker.class.getName()).log(Level.SEVERE, "Reciever Worker: Object Streams failed");
+            Logger.getLogger(ReceiverWorker.class.getName()).log(Level.SEVERE, "Receiver Worker: Object Streams failed");
             System.exit(1);
         }
         
@@ -43,7 +45,7 @@ public class ReceiverWorker extends Thread {
         switch (message.getType())
         {
             case MessageTypes.SHUTDOWN:
-                System.out.println("Recieved shutdown message from server, exiting");
+                System.out.println("Received shutdown message from server, exiting");
 
                 try
                 {
@@ -64,7 +66,7 @@ public class ReceiverWorker extends Thread {
                 }
                 catch(IOException ex)
                 {
-                    Logger.getLogger(ReceiverWorker.class.getName()).log(Level.SEVERE, "Reciever Worker: could not get message content");
+                    Logger.getLogger(ReceiverWorker.class.getName()).log(Level.SEVERE, "Receiver Worker: could not get message content");
                 }
                 break;
             default:
