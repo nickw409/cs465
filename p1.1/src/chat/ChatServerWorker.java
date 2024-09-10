@@ -53,7 +53,7 @@ public class ChatServerWorker extends Thread implements MessageTypes
         // processing message
         switch (message.getType()) {
             // ---------------------------------------------------------------------------------------------
-            case JOIN:
+            case MessageTypes.JOIN:
             // ---------------------------------------------------------------------------------------------
 
                 // read participant's NodeInfo
@@ -77,8 +77,8 @@ public class ChatServerWorker extends Thread implements MessageTypes
                 break;
 
             // ---------------------------------------------------------------------------------------------
-            case LEAVE:
-            case SHUTDOWN:
+            case MessageTypes.LEAVE:
+            case MessageTypes.SHUTDOWN:
             // ---------------------------------------------------------------------------------------------
 
                 // remove this participant's info
@@ -107,7 +107,7 @@ public class ChatServerWorker extends Thread implements MessageTypes
                 break;
             
             // ---------------------------------------------------------------------------------------------
-            case SHUTDOWN_ALL:
+            case MessageTypes.SHUTDOWN_ALL:
             // ---------------------------------------------------------------------------------------------
 
                 // run through all of the participants and shut down each single one
@@ -146,7 +146,7 @@ public class ChatServerWorker extends Thread implements MessageTypes
                 System.exit(0);
             
             // ---------------------------------------------------------------------------------------------
-            case NOTE:
+            case MessageTypes.NOTE:
             // ---------------------------------------------------------------------------------------------
 
                 // just display note

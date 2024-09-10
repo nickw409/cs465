@@ -1,2 +1,6 @@
 # Directory where I test random stuff
 java_testing
+
+# Directories used when compiling and running the code
+classes/
+config/
