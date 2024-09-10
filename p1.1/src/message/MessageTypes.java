@@ -1,8 +1,8 @@
 package message;
 /**
- * MessageType
+ * MessageTypes
  */
-public interface MessageType 
+public interface MessageTypes 
 {
   public static final int JOIN          = 0;
   public static final int LEAVE         = 1;
