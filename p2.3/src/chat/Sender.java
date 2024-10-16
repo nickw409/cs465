@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-
+import java.util.Iterator;
 import java.util.Scanner;
 
 import java.util.logging.Level;
@@ -13,190 +13,224 @@ import java.util.logging.Logger;
 import message.Message;
 import message.MessageTypes;
 
-public class Sender extends Thread implements MessageTypes{
-    
+public class Sender extends Thread implements MessageTypes {
+
     Socket serverConnection = null;
     Scanner userInput = new Scanner(System.in);
     String inputLine = null;
     boolean hasJoined;
 
-    //constructor
-    public Sender()
-    {
+    // constructor
+    public Sender() {
         userInput = new Scanner(System.in);
         hasJoined = false;
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         ObjectOutputStream writeToNet;
         ObjectInputStream readFromNet;
+        NodeInfo participantInfo = null;
+        Iterator<NodeInfo> participantsIterator;
+        Socket chatConnection = null;
 
-        while(true)
-        {
-            //get user input
+        while (true) {
+            // get user input
             inputLine = userInput.nextLine();
 
             //
-            if( inputLine.startsWith("JOIN"))
-            {
-                //ignore, if we already joined a chat
-                if( hasJoined == true)
-                {
+            if (inputLine.startsWith("JOIN")) {
+                // ignore, if we already joined a chat
+                if (hasJoined == true) {
                     System.err.println("You have already joined a chat...");
                     continue;
                 }
 
                 String[] connectivityInfo = inputLine.split("[ ]+");
 
-                try
-                {
+                try {
                     ChatClient.knownNodeInfo = new NodeInfo(connectivityInfo[1], Integer.parseInt(connectivityInfo[1]));
-                }
-                catch (ArrayIndexOutOfBoundsException ex)
-                {
+                } catch (ArrayIndexOutOfBoundsException ex) {
 
                 }
 
-                if(ChatClient.knownNodeInfo == null)
-                {
+                if (ChatClient.knownNodeInfo == null) {
                     System.err.println("[Sender].run No server connectivity information");
                     continue;
                 }
 
-                try{
-                    serverConnection = new Socket(ChatClient.knownNodeInfo.getAddress(), ChatClient.knownNodeInfo.getPort());
+                try {
+                    serverConnection = new Socket(ChatClient.knownNodeInfo.getAddress(),
+                            ChatClient.knownNodeInfo.getPort());
 
                     readFromNet = new ObjectInputStream(serverConnection.getInputStream());
                     writeToNet = new ObjectOutputStream(serverConnection.getOutputStream());
 
                     writeToNet.writeObject(new Message(JOIN, ChatClient.myNodeInfo));
-                    
+
                     serverConnection.close();
-                }
-                catch( IOException ex)
-                {
-                    Logger.getLogger(Sender.class.getName()).log(Level.SEVERE, "Error connectiong to server or opening or writing/reading object streams otr closing connection", ex);
+                } catch (IOException ex) {
+                    Logger.getLogger(Sender.class.getName()).log(Level.SEVERE,
+                            "Error connectiong to server or opening or writing/reading object streams otr closing connection",
+                            ex);
                     continue;
+                }
+
+                while (ChatClient.participants == null) {
+                }
+
+                participantsIterator = ChatClient.participants.iterator();
+
+                while (participantsIterator.hasNext()) {
+
+                    // get next participant
+                    participantInfo = participantsIterator.next();
+
+                    try {
+                        // open socket to one chat client at a time
+                        chatConnection = new Socket(participantInfo.address, participantInfo.port);
+
+                        // open object streams
+                        writeToNet = new ObjectOutputStream(chatConnection.getOutputStream());
+                        readFromNet = new ObjectInputStream(chatConnection.getInputStream());
+                        writeToNet.writeObject(new Message(JOINED, ChatClient.myNodeInfo));
+                        // close connection to this client
+                        chatConnection.close();
+                    } catch (IOException ex) {
+                        Logger.getLogger(ChatServerWorker.class.getName()).log(Level.SEVERE,
+                                "[Sender].run JOINED Attempt could not open socket to client or send a message",
+                                ex);
+                    }
                 }
 
                 hasJoined = true;
                 System.out.println("Joined Chat ...");
-            }
-            else if (inputLine.startsWith("LEAVE"))
-            {
-                if (hasJoined == false)
-                {
+            } else if (inputLine.startsWith("LEAVE")) {
+                if (hasJoined == false) {
                     System.err.println("You have not joined a chat yet ...");
                     continue;
                 }
 
-                try
-                {
-                    serverConnection = new Socket(ChatClient.knownNodeInfo.getAddress(), ChatClient.knownNodeInfo.getPort());
+                participantsIterator = ChatClient.participants.iterator();
 
-                    readFromNet = new ObjectInputStream(serverConnection.getInputStream());
-                    writeToNet = new ObjectOutputStream(serverConnection.getOutputStream());
+                while (participantsIterator.hasNext()) {
 
-                    writeToNet.writeObject(new Message(LEAVE, ChatClient.myNodeInfo));
+                    // get next participant
+                    participantInfo = participantsIterator.next();
 
-                    serverConnection.close();
+                    try {
+                        // open socket to one chat client at a time
+                        chatConnection = new Socket(participantInfo.address, participantInfo.port);
+
+                        // open object streams
+                        writeToNet = new ObjectOutputStream(chatConnection.getOutputStream());
+                        readFromNet = new ObjectInputStream(chatConnection.getInputStream());
+                        writeToNet.writeObject(new Message(LEAVE, ChatClient.myNodeInfo));
+                        // close connection to this client
+                        chatConnection.close();
+                    } catch (IOException ex) {
+                        Logger.getLogger(ChatServerWorker.class.getName()).log(Level.SEVERE,
+                                "[Sender].run LEAVE Attempt could not open socket to client or send a message",
+                                ex);
+                    }
                 }
-                catch (IOException ex)
-                {
-                    Logger.getLogger(Sender.class.getName()).log(Level.SEVERE, "Error connection to server streams or closing connection", ex);
-                    continue;
-                }
 
-                //we are out
+                // we are out
                 hasJoined = false;
 
                 System.out.println("Left chat ...");
-            }
-            else if(inputLine.startsWith("SHUTDOWN ALL"))
-            {
-                if( hasJoined == false)
-                {
+            } else if (inputLine.startsWith("SHUTDOWN ALL")) {
+                if (hasJoined == false) {
                     System.err.println("To shut down the whole chat, you first need to join ...");
                     continue;
                 }
-                
-                try
-                {
-                    serverConnection = new Socket(ChatClient.knownNodeInfo.getAddress(), ChatClient.knownNodeInfo.getPort());
 
-                    readFromNet = new ObjectInputStream(serverConnection.getInputStream());
-                    writeToNet = new ObjectOutputStream(serverConnection.getOutputStream());
+                participantsIterator = ChatClient.participants.iterator();
 
-                    writeToNet.writeObject(new Message(SHUTDOWN, ChatClient.myNodeInfo));
+                while (participantsIterator.hasNext()) {
 
-                    serverConnection.close();
+                    // get next participant
+                    participantInfo = participantsIterator.next();
 
-                    System.out.println("Left chat ...");
-                }
-                catch (IOException ex)
-                {
-                    Logger.getLogger(Sender.class.getName()).log(Level.SEVERE, "Error in sending shutdown msg", ex);
-                    continue;
-                }
-                
-            }
-            else if(inputLine.startsWith("SHUTDOWN"))
-            {
-                if( hasJoined == true)
-                {
-                    try
-                    {
-                        serverConnection = new Socket(ChatClient.knownNodeInfo.getAddress(), ChatClient.knownNodeInfo.getPort());
+                    try {
+                        // open socket to one chat client at a time
+                        chatConnection = new Socket(participantInfo.address, participantInfo.port);
 
-                        readFromNet = new ObjectInputStream(serverConnection.getInputStream());
-                        writeToNet = new ObjectOutputStream(serverConnection.getOutputStream());
-
-                        writeToNet.writeObject(new Message(LEAVE, ChatClient.myNodeInfo));
-
-                        serverConnection.close();
-                    }
-                    catch (IOException ex)
-                    {
-                        Logger.getLogger(Sender.class.getName()).log(Level.SEVERE, "Error in sending shutdown all msg", ex);
-                        continue;
+                        // open object streams
+                        writeToNet = new ObjectOutputStream(chatConnection.getOutputStream());
+                        readFromNet = new ObjectInputStream(chatConnection.getInputStream());
+                        writeToNet.writeObject(new Message(SHUTDOWN, ChatClient.myNodeInfo));
+                        // close connection to this client
+                        chatConnection.close();
+                    } catch (IOException ex) {
+                        Logger.getLogger(ChatServerWorker.class.getName()).log(Level.SEVERE,
+                                "[Sender].run SHUTDOWN_ALL Attempt could not open socket to client or send a message",
+                                ex);
                     }
                 }
                 System.out.println("Exiting ...\n");
                 System.exit(0);
-            }
-            else
-            {
-                if( hasJoined == false)
-                {
+
+            } else if (inputLine.startsWith("SHUTDOWN")) {
+                if (hasJoined == true) {
+
+                    participantsIterator = ChatClient.participants.iterator();
+
+                    while (participantsIterator.hasNext()) {
+
+                        // get next participant
+                        participantInfo = participantsIterator.next();
+
+                        try {
+                            // open socket to one chat client at a time
+                            chatConnection = new Socket(participantInfo.address, participantInfo.port);
+
+                            // open object streams
+                            writeToNet = new ObjectOutputStream(chatConnection.getOutputStream());
+                            readFromNet = new ObjectInputStream(chatConnection.getInputStream());
+                            writeToNet.writeObject(new Message(LEAVE, ChatClient.myNodeInfo));
+                            // close connection to this client
+                            chatConnection.close();
+                        } catch (IOException ex) {
+                            Logger.getLogger(ChatServerWorker.class.getName()).log(Level.SEVERE,
+                                    "[Sender].run SHUTDOWN Attempt could not open socket to client or send a message",
+                                    ex);
+                        }
+                    }
+                }
+                System.out.println("Exiting ...\n");
+                System.exit(0);
+            } else {
+                if (hasJoined == false) {
                     System.err.println("You have not joined a chat yet ...");
                     continue;
                 }
-                
-                try
-                {
-                    serverConnection = new Socket(ChatClient.knownNodeInfo.getAddress(), ChatClient.knownNodeInfo.getPort());
 
-                    // If this doesnt work revert to read then write since receiver is already
-                    // write then read
-                    writeToNet = new ObjectOutputStream(serverConnection.getOutputStream());
-                    readFromNet = new ObjectInputStream(serverConnection.getInputStream());
+                // run through all participants and send the note to each single one
+                participantsIterator = ChatServer.participants.iterator();
+                while (participantsIterator.hasNext()) {
+                    // get next participant
+                    participantInfo = participantsIterator.next();
 
-                    writeToNet.writeObject(new Message(NOTE, ChatClient.myNodeInfo.getName() + ":" + inputLine));
+                    try {
+                        // open socket to one chat client at a time
+                        chatConnection = new Socket(participantInfo.address, participantInfo.port);
 
-                    serverConnection.close();
+                        writeToNet = new ObjectOutputStream(chatConnection.getOutputStream());
+                        readFromNet = new ObjectInputStream(chatConnection.getInputStream());
 
-                    System.out.println("Message sent ...");
+                        writeToNet.writeObject(new Message(NOTE, ChatClient.myNodeInfo.getName() + ":" + inputLine));
+
+                        System.out.println("Message sent ...");
+                        // close connection to this client
+                        chatConnection.close();
+                    } catch (IOException ex) {
+                        Logger.getLogger(ChatServerWorker.class.getName()).log(Level.SEVERE,
+                                "[ChatServerWorker].run Could not open socket to client or send a message",
+                                ex);
+                    }
                 }
-                catch (IOException ex)
-                {
-                    Logger.getLogger(Sender.class.getName()).log(Level.SEVERE, "Error in sending msg", ex);
-                    continue;
-                }
-                
             }
-            
         }
-    }  
+    }
 }
