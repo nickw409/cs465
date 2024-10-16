@@ -97,7 +97,7 @@ public class Sender extends Thread implements MessageTypes {
                         // close connection to this client
                         chatConnection.close();
                     } catch (IOException ex) {
-                        Logger.getLogger(ChatServerWorker.class.getName()).log(Level.SEVERE,
+                        Logger.getLogger(Sender.class.getName()).log(Level.SEVERE,
                                 "[Sender].run JOINED Attempt could not open socket to client or send a message",
                                 ex);
                     }
@@ -129,7 +129,7 @@ public class Sender extends Thread implements MessageTypes {
                         // close connection to this client
                         chatConnection.close();
                     } catch (IOException ex) {
-                        Logger.getLogger(ChatServerWorker.class.getName()).log(Level.SEVERE,
+                        Logger.getLogger(Sender.class.getName()).log(Level.SEVERE,
                                 "[Sender].run LEAVE Attempt could not open socket to client or send a message",
                                 ex);
                     }
