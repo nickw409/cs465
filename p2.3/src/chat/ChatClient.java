@@ -126,9 +126,10 @@ public class ChatClient implements Runnable{
  *      * Sends JOINED to all newly added participants
  *      * Sends shutdown_all to all participants
  * Receiver:
- *      * Sends INFO message to client in response to JOIN
- *      * Prints received note
- *      * Removes node that sent leave from participants
- *      * Shuts down when receiving shutdown_all
- *      * Receives JOINED and adds node to participants
+ *      * Sends INFO message to client in response to JOIN (done)
+ *      * Prints received note (done)
+ *      * Removes node that sent leave from participants (done)
+ *      * Shuts down when receiving shutdown (done)
+ *      * Receives JOINED and adds node to participants (done)
+ *      * Receives INFO and adds every participant to list of participants in ChatClient
  */
