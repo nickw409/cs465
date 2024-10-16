@@ -4,3 +4,4 @@ java_testing
 # Directories used when compiling and running the code
 *.class
 config/
+.DS_Store
