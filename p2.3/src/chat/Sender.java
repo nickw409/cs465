@@ -163,7 +163,7 @@ public class Sender extends Thread implements MessageTypes {
                         // close connection to this client
                         chatConnection.close();
                     } catch (IOException ex) {
-                        Logger.getLogger(ChatServerWorker.class.getName()).log(Level.SEVERE,
+                        Logger.getLogger(Sender.class.getName()).log(Level.SEVERE,
                                 "[Sender].run SHUTDOWN_ALL Attempt could not open socket to client or send a message",
                                 ex);
                     }
@@ -192,7 +192,7 @@ public class Sender extends Thread implements MessageTypes {
                             // close connection to this client
                             chatConnection.close();
                         } catch (IOException ex) {
-                            Logger.getLogger(ChatServerWorker.class.getName()).log(Level.SEVERE,
+                            Logger.getLogger(Sender.class.getName()).log(Level.SEVERE,
                                     "[Sender].run SHUTDOWN Attempt could not open socket to client or send a message",
                                     ex);
                         }
@@ -207,7 +207,7 @@ public class Sender extends Thread implements MessageTypes {
                 }
 
                 // run through all participants and send the note to each single one
-                participantsIterator = ChatServer.participants.iterator();
+                participantsIterator = ChatClient.participants.iterator();
                 while (participantsIterator.hasNext()) {
                     // get next participant
                     participantInfo = participantsIterator.next();
@@ -225,7 +225,7 @@ public class Sender extends Thread implements MessageTypes {
                         // close connection to this client
                         chatConnection.close();
                     } catch (IOException ex) {
-                        Logger.getLogger(ChatServerWorker.class.getName()).log(Level.SEVERE,
+                        Logger.getLogger(Sender.class.getName()).log(Level.SEVERE,
                                 "[ChatServerWorker].run Could not open socket to client or send a message",
                                 ex);
                     }
