@@ -25,6 +25,7 @@ public class ChatClient implements Runnable{
 
     public ChatClient(String propertiesFile)
     {
+        System.out.println(myNodeInfo);
         //get properties from properties file
         Properties properties = null;
         try
@@ -58,6 +59,7 @@ public class ChatClient implements Runnable{
 
         //create node info
         myNodeInfo = new NodeInfo(NetworkUtilities.getMyIP(), myPort, myName);
+        System.out.println(myNodeInfo.getPort());
 
         //get server default port
         int serverPort = 0;

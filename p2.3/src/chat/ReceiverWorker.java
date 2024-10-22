@@ -171,6 +171,7 @@ public class ReceiverWorker extends Thread {
             
             case MessageTypes.INFO:
                 // init list for received participants
+                @SuppressWarnings("unchecked")
                 List<NodeInfo> newParticipants = (List<NodeInfo>) message.getContent();
 
                 // loop through all received participants and add to participants
@@ -184,7 +185,6 @@ public class ReceiverWorker extends Thread {
                 }
                 // add original node to participants list
                 ChatClient.participants.add(ChatClient.knownNodeInfo);
-                
                 break;
             default:
         }
