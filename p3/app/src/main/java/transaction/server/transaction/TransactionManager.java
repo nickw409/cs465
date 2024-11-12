@@ -192,19 +192,19 @@ public class TransactionManager implements MessageTypes
             // loop is left when transaction closes
             while (keepgoing) 
             {
-                try 
+                // reading message
+                try
                 {
-                    // reading message
-                    try
-                    {
-                        message = (Message) readFromNet.readObject();
-                    }
-                    catch (IOException | ClassNotFoundException e)
-                    {
-                        System.out.println("[TransactionManagerWorker.run] Message could not be read from object stream.");
-                        System.exit(1);
-                    }
+                    message = (Message) readFromNet.readObject();
+                }
+                catch (IOException | ClassNotFoundException e)
+                {
+                    System.out.println("[TransactionManagerWorker.run] Message could not be read from object stream.");
+                    System.exit(1);
+                }
                     
+                try 
+                    {
                     // processing message
                     switch (message.getType())
                     {
@@ -228,74 +228,64 @@ public class TransactionManager implements MessageTypes
                             
                             // write back transactionID to client
                             // ...
-                            try
-                            {
-                                this.writeToNet.writeObject(new Message(OPEN_TRANSACTION, transactionID));
-                                // add log
-                                transaction.log("[TransactionManagerWorker.run] " + OPEN_COLOR + "OPEN_TRANSACTION" + RESET_COLOR + " #" + transaction.getTransactionID());
-                                
-                            } catch (IOException ex)
-                            {
-                                ex.printStackTrace();
-                            }
-                            
+                            this.writeToNet.writeObject(new Message(OPEN_TRANSACTION, transactionID));
+                            this.writeToNet.flush();
+                            // add log
+                            transaction.log("[TransactionManagerWorker.run] " + OPEN_COLOR + "OPEN_TRANSACTION" + RESET_COLOR + " #" + transaction.getTransactionID());
+
+
                             break;
                             
                             
                             // -------------------------------------------------------------------------------------------
                         case CLOSE_TRANSACTION:
                             // -------------------------------------------------------------------------------------------
-                            try
+                            synchronized (runningTransactions)
                             {
-                                synchronized (runningTransactions)
-                                {
-                                    // remove transaction from ArrayList runningTransactions
-                                    // ...
-                                    runningTransactions.remove(transaction);
-                                    // the BIG thing, we enter validation phase and, if successful, the update phase
-                                    if (validateTransaction(transaction))
-                                    {
-                                        // add this transaction to committedTransactions
-                                        // important step! information used in other transactions' validations, if they overlap with this one
-                                        // ...
-                                        committedTransactions.put(transactionID, transaction);
-                                        // this is the update phase ... write data to operational data in one go
-                                        // ...
-                                        TransactionServer.transactionManager.writeTransaction(transaction);
-                                        // tell client that transaction committed
-                                        // ...
-                                        this.writeToNet.writeObject(new Message(CLOSE_TRANSACTION, TRANSACTION_COMMITTED));
-                                        // add log committed
-                                        transaction.log("[TransactionManagerWorker.run] " + COMMIT_COLOR + "CLOSE_TRANSACTION"+ RESET_COLOR + " #" + transaction.getTransactionID() + " - COMMITTED");
-                                    }
-                                    else
-                                    {
-                                        // validation failed, abort this transaction
-                                        // there is not anything that is done explicitly, aborting is essentially doing nothing
-                                        abortedTransactions.add(transaction);
-                                        
-                                        // tell client that transaction was aborted
-                                        // ...
-                                        this.writeToNet.writeObject(new Message(CLOSE_TRANSACTION, TRANSACTION_ABORTED));
-                                        // add log aborted
-                                        transaction.log("[TransactionManagerWorker.run] " + ABORT_COLOR + "CLOSE_TRANSACTION"+ RESET_COLOR + " #" + transaction.getTransactionID() + " - ABORTED");
-                                    }
-                                }
-
-                                // regardless whether the transaction committed or aborted, shut down network connections
+                                // remove transaction from ArrayList runningTransactions
                                 // ...
-                                this.writeToNet.close();
-                                this.readFromNet.close();
-                                
-                                // finally print out the transaction's log
-                                if (TransactionServer.transactionView)
+                                runningTransactions.remove(transaction);
+                                // the BIG thing, we enter validation phase and, if successful, the update phase
+                                if (validateTransaction(transaction))
                                 {
-                                    System.out.println(transaction.getLog());
+                                    // add this transaction to committedTransactions
+                                    // important step! information used in other transactions' validations, if they overlap with this one
+                                    // ...
+                                    committedTransactions.put(transactionID, transaction);
+                                    // this is the update phase ... write data to operational data in one go
+                                    // ...
+                                    TransactionServer.transactionManager.writeTransaction(transaction);
+                                    // tell client that transaction committed
+                                    // ...
+                                    this.writeToNet.writeObject(new Message(CLOSE_TRANSACTION, TRANSACTION_COMMITTED));
+                                    this.writeToNet.flush();
+                                    // add log committed
+                                    transaction.log("[TransactionManagerWorker.run] " + COMMIT_COLOR + "CLOSE_TRANSACTION"+ RESET_COLOR + " #" + transaction.getTransactionID() + " - COMMITTED");
                                 }
-                                
-                            } catch (IOException ex)
+                                else
+                                {
+                                    // validation failed, abort this transaction
+                                    // there is not anything that is done explicitly, aborting is essentially doing nothing
+                                    abortedTransactions.add(transaction);
+
+                                    // tell client that transaction was aborted
+                                    // ...
+                                    this.writeToNet.writeObject(new Message(CLOSE_TRANSACTION, TRANSACTION_ABORTED));
+                                    this.writeToNet.flush();
+                                    // add log aborted
+                                    transaction.log("[TransactionManagerWorker.run] " + ABORT_COLOR + "CLOSE_TRANSACTION"+ RESET_COLOR + " #" + transaction.getTransactionID() + " - ABORTED");
+                                }
+                            }
+
+                            // regardless whether the transaction committed or aborted, shut down network connections
+                            // ...
+                            this.writeToNet.close();
+                            this.readFromNet.close();
+
+                            // finally print out the transaction's log
+                            if (TransactionServer.transactionView)
                             {
-                                Logger.getLogger(TransactionManager.class.getName()).log(Level.SEVERE, null, ex);
+                                System.out.println(transaction.getLog());
                             }
                             break;
                             
@@ -318,6 +308,7 @@ public class TransactionManager implements MessageTypes
                             // confirm read to client
                             // ...
                             this.writeToNet.writeObject(new Message(READ_REQUEST, TRANSACTION_COMMITTED));
+                            this.writeToNet.flush();
                             // add log post read
                             transaction.log("[TransactionManagerWorker.run] "+ READ_COLOR + "READ_REQUEST" + RESET_COLOR + " <<<<<<<<<<<<<<<<<<<< account #" + accountNumber + ", balance $" + balance);
                             
@@ -342,6 +333,7 @@ public class TransactionManager implements MessageTypes
                             // write back old balance to client
                             // ....
                             this.writeToNet.writeObject(new Message(WRITE_REQUEST, balance));
+                            this.writeToNet.flush();
                             
                             // add log post write
                             transaction.log("[TransactionManagerWorker.run] " + WRITE_COLOR + "WRITE_REQUEST" + RESET_COLOR + " <<<<<<<<<<<<<<<<<<<< account #" + accountNumber + ", wrote $" + balance);
@@ -361,15 +353,11 @@ public class TransactionManager implements MessageTypes
                             }
                             
                             // shut down
-                            try {
-                                readFromNet.close();
-                                writeToNet.close();
-                                client.close();
+                            readFromNet.close();
+                            writeToNet.close();
+                            client.close();
                                 
-                                keepgoing = false; //stop loop
-                            } catch (IOException e) {
-                                System.out.println("[TransactionManagerWorker.run] ABORT_TRANSACTION - Error when closing connection to client");
-                            }
+                            keepgoing = false; //stop loop
                             
                             // add log abort
                             transaction.log("[TransactionManagerWorker.run] " + ABORT_COLOR + "ABORT_TRANSACTION" + RESET_COLOR + " #" + transaction.getTransactionID() + " - ABORTED by client");
