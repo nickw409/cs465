@@ -85,28 +85,36 @@ public class TransactionManager implements MessageTypes
             int transactionNumberIndex;
             
             ArrayList<Integer> readSet = transaction.getReadSet();
-            HashMap<Integer, Integer> checkedTransactionWriteSet;
+            HashMap<Integer, Integer> checkedTransactionWriteSet = transaction.getWriteSet();
             Iterator<Integer> readSetIterator;
             
             Transaction checkedTransaction;
             Integer checkedAccount;
             
             // assign a transaction number to this transaction
-            // ...            
+            transactionNumber = transaction.transactionNumber;
 
             // run through all overlapping transactions
             // use transactionNumberIndex as the transaction number of overlapping transaction currently looked at
-            for (/* ... */)
+            for (transactionNumberIndex = 0 ; transactionNumberIndex <=  transactionNumber ; ++transactionNumberIndex)
             {
                 // get transaction with transaction number transactionNumberIndex
                 // from committedTransactions -> checkedTransaction
                 // ...
+                tranHolder = committedTransactions -> checkedTransaction.runningTransactions[transactionNumberIndex];
                 
                 // make sure transaction with transactionNumberIndex was not aborted before
                 if(checkedTransaction != null)
                 {
                     // check our own read set against the write set of the checkedTransaction
                     // ...
+                    for (element = 0; element < 10; ++element)
+                    {
+                        if(tranHolder.writeSet[element] == this.readSet[element])
+                        {
+                            return false;
+                        }
+                    }
                 }
             }
                         
@@ -125,10 +133,13 @@ public class TransactionManager implements MessageTypes
         HashMap<Integer, Integer> transactionWriteSet = transaction.getWriteSet();
         int account;
         int balance;
-         
+         //transactio.writeSet.get
         // get all the entries of this write set
-        for (/* all entries in write set */) {
+        for (/* all entries in write set */Integer accountNumber : transactionWriteSet.keySet()) {
             // ....
+            newBalance = writeSet.get(accountNumber);
+
+            TransactionServer.accountManager.write(accountNumber, newBalance);
                             
             transaction.log("[TransactionManager.writeTransaction] Transaction #" + transaction.getTransactionID() + " written");                    
         }        
