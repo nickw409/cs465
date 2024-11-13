@@ -7,3 +7,4 @@ config/
 
 # junk
 .DS_Store
+p4/project_notes.txt
