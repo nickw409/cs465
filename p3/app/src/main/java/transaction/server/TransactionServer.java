@@ -192,7 +192,7 @@ public class TransactionServer implements Runnable
         if (args.length == 1) {
             new TransactionServer(args[0]).run();
         } else {
-            new TransactionServer("../../config/TransactionServer.properties").run();
+            new TransactionServer("/src/main/java/config/TransactionServer.properties").run();
         }
     }
 
