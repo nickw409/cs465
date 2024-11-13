@@ -191,16 +191,16 @@ public class TransactionManager implements MessageTypes {
                                 // create new transaction and assign a new transaction ID
                                 // most importantly, pass in the last assigned transaction number
                                 // ...
-                                transactionID += 1;
-                                transaction = new Transaction(transactionID, transactionID - 1);
+                                transactionIdCounter += 1;
+                                transaction = new Transaction(transactionIdCounter, transactionNumberCounter);
                                 // add the new transaction to ArrayList runningTransactions
                                 // ...
                                 runningTransactions.add(transaction);
                             }
 
-                            // write back transactionID to client
+                            // write back transactionId to client
                             // ...
-                            this.writeToNet.writeObject(new Message(OPEN_TRANSACTION, transactionID));
+                            this.writeToNet.writeObject(new Message(OPEN_TRANSACTION, transactionIdCounter));
                             this.writeToNet.flush();
                             // add log
                             transaction.log("[TransactionManagerWorker.run] " + OPEN_COLOR + "OPEN_TRANSACTION"
@@ -221,7 +221,7 @@ public class TransactionManager implements MessageTypes {
                                     // important step! information used in other transactions' validations, if they
                                     // overlap with this one
                                     // ...
-                                    committedTransactions.put(transactionID, transaction);
+                                    committedTransactions.put(transactionIdCounter, transaction);
                                     // this is the update phase ... write data to operational data in one go
                                     // ...
                                     TransactionServer.transactionManager.writeTransaction(transaction);
@@ -255,7 +255,7 @@ public class TransactionManager implements MessageTypes {
                             // ...
                             this.writeToNet.close();
                             this.readFromNet.close();
-
+                            keepgoing = false;
                             // finally print out the transaction's log
                             if (TransactionServer.transactionView) {
                                 System.out.println(transaction.getLog());
@@ -280,7 +280,7 @@ public class TransactionManager implements MessageTypes {
 
                             // confirm read to client
                             // ...
-                            this.writeToNet.writeObject(new Message(READ_REQUEST, TRANSACTION_COMMITTED));
+                            this.writeToNet.writeObject(new Message(READ_REQUEST, balance));
                             this.writeToNet.flush();
                             // add log post read
                             transaction.log("[TransactionManagerWorker.run] " + READ_COLOR + "READ_REQUEST"
@@ -295,7 +295,11 @@ public class TransactionManager implements MessageTypes {
 
                             // get the message content: account number and balance to write
                             // ....
-
+                            int[] receive = (int[]) message.getContent();
+                            accountNumber = receive[0];
+                            int newBalance = receive[1];
+                            
+                            
                             // add log pre write
                             transaction.log("[TransactionManagerWorker.run] " + WRITE_COLOR + "WRITE_REQUEST"
                                     + RESET_COLOR + " >>>>>>>>>>>>>>>>>>> account #" + accountNumber
@@ -303,7 +307,7 @@ public class TransactionManager implements MessageTypes {
 
                             /// do the write
                             // ======>
-                            transaction.write(accountNumber, balance);
+                            transaction.write(accountNumber, newBalance);
                             // <======
 
                             // write back old balance to client
@@ -314,7 +318,7 @@ public class TransactionManager implements MessageTypes {
                             // add log post write
                             transaction.log("[TransactionManagerWorker.run] " + WRITE_COLOR + "WRITE_REQUEST"
                                     + RESET_COLOR + " <<<<<<<<<<<<<<<<<<<< account #" + accountNumber + ", wrote $"
-                                    + balance);
+                                    + newBalance);
 
                             break;
 
