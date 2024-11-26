@@ -11,9 +11,9 @@ import dynNet.dynCalculator.Operation;
  * @author Prof. Dr.-Ing. Wolf-Dieter Otte
  * @version May 20002
  */
-public class SubtractionOperation implements Operation{
-	
-	public float calculate(float firstNumber, float secondNumber){
+public class SubtractionOperation implements Operation {
+
+	public float calculate(float firstNumber, float secondNumber) {
 		return firstNumber - secondNumber;
 	}
 }
