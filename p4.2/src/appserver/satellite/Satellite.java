@@ -31,6 +31,7 @@ public class Satellite extends Thread {
 
     private ConnectivityInfo satelliteInfo = new ConnectivityInfo();
     private ConnectivityInfo serverInfo = new ConnectivityInfo();
+    private ConnectivityInfo classLoaderInfo = new ConnectivityInfo();
     private HTTPClassLoader classLoader = null;
     private Hashtable<String, Tool> toolsCache = null;
 
@@ -49,7 +50,9 @@ public class Satellite extends Thread {
 
             // read properties of the code server and create class loader
             PropertyHandler classLoaderProps = new PropertyHandler(classLoaderPropertiesFile);
-            classLoader = new HTTPClassLoader(classLoaderProps.getProperty("codebase"));
+            classLoaderInfo.setHost(classLoaderProps.getProperty("host"));
+            classLoaderInfo.setPort(Integer.parseInt(classLoaderProps.getProperty("port")));
+            classLoader = new HTTPClassLoader(classLoaderInfo.getHost(), classLoaderInfo.getPort());
 
             // create tools cache
             toolsCache = new Hashtable<>();
@@ -62,6 +65,7 @@ public class Satellite extends Thread {
     @Override
     public void run() {
         try {
+            /*
             // register this satellite with the SatelliteManager on the server
             Socket serverSocket = new Socket(serverInfo.getHost(), serverInfo.getPort());
             ObjectOutputStream out = new ObjectOutputStream(serverSocket.getOutputStream());
@@ -74,7 +78,7 @@ public class Satellite extends Thread {
 
             // close connection
             serverSocket.close();
-
+            */
             // create server socket
             ServerSocket server = new ServerSocket(satelliteInfo.getPort());
             System.out.println("[Satellite] Running on port: " + satelliteInfo.getPort());
