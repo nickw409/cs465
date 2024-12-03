@@ -55,7 +55,7 @@ public class Satellite extends Thread {
             classLoader = new HTTPClassLoader(classLoaderInfo.getHost(), classLoaderInfo.getPort());
 
             // create tools cache
-            toolsCache = new Hashtable<>();
+            toolsCache = new Hashtable<String, Tool>();
 
         } catch (IOException e) {
             Logger.getLogger(Satellite.class.getName()).log(Level.SEVERE, "Error reading properties files", e);
@@ -162,10 +162,14 @@ public class Satellite extends Thread {
             throws UnknownToolException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         Tool toolObject = toolsCache.get(toolClassString);
 
-        if (toolObject == null) {
-            Class<?> toolClass = classLoader.loadClass(toolClassString);
-            toolObject = (Tool) toolClass.getDeclaredConstructor().newInstance();
-            toolsCache.put(toolClassString, toolObject);
+        try {
+            if (toolObject == null) {
+                Class<?> toolClass = classLoader.findClass(toolClassString);
+                toolObject = (Tool) toolClass.getDeclaredConstructor().newInstance();
+                toolsCache.put(toolClassString, toolObject);
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(SatelliteThread.class.getName()).log(Level.SEVERE, "Error getting tool object", ex);
         }
 
         return toolObject;
