@@ -5,12 +5,10 @@ import appserver.comm.ConnectivityInfo;
 import appserver.job.UnknownToolException;
 import appserver.comm.Message;
 import static appserver.comm.MessageTypes.JOB_REQUEST;
-import static appserver.comm.MessageTypes.REGISTER_SATELLITE;
 import appserver.job.Tool;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Hashtable;
@@ -39,19 +37,19 @@ public class Satellite extends Thread {
         try {
             // read this satellite's properties and populate satelliteInfo object
             PropertyHandler satelliteProps = new PropertyHandler(satellitePropertiesFile);
-            satelliteInfo.setName(satelliteProps.getProperty("name"));
-            satelliteInfo.setHost(satelliteProps.getProperty("host"));
-            satelliteInfo.setPort(Integer.parseInt(satelliteProps.getProperty("port")));
+            satelliteInfo.setName(satelliteProps.getProperty("NAME"));
+            //satelliteInfo.setHost(satelliteProps.getProperty("host"));
+            satelliteInfo.setPort(Integer.parseInt(satelliteProps.getProperty("PORT")));
 
             // read properties of the application server and populate serverInfo object
             PropertyHandler serverProps = new PropertyHandler(serverPropertiesFile);
-            serverInfo.setHost(serverProps.getProperty("host"));
-            serverInfo.setPort(Integer.parseInt(serverProps.getProperty("port")));
+            serverInfo.setHost(serverProps.getProperty("HOST"));
+            serverInfo.setPort(Integer.parseInt(serverProps.getProperty("PORT")));
 
             // read properties of the code server and create class loader
             PropertyHandler classLoaderProps = new PropertyHandler(classLoaderPropertiesFile);
-            classLoaderInfo.setHost(classLoaderProps.getProperty("host"));
-            classLoaderInfo.setPort(Integer.parseInt(classLoaderProps.getProperty("port")));
+            classLoaderInfo.setHost(classLoaderProps.getProperty("HOST"));
+            classLoaderInfo.setPort(Integer.parseInt(classLoaderProps.getProperty("PORT")));
             classLoader = new HTTPClassLoader(classLoaderInfo.getHost(), classLoaderInfo.getPort());
 
             // create tools cache
@@ -65,20 +63,8 @@ public class Satellite extends Thread {
     @Override
     public void run() {
         try {
-            /*
             // register this satellite with the SatelliteManager on the server
-            Socket serverSocket = new Socket(serverInfo.getHost(), serverInfo.getPort());
-            ObjectOutputStream out = new ObjectOutputStream(serverSocket.getOutputStream());
-            ObjectInputStream in = new ObjectInputStream(serverSocket.getInputStream());
-
-            // send registration message
-            Message registerMessage = new Message(REGISTER_SATELLITE, satelliteInfo);
-            out.writeObject(registerMessage);
-            out.flush();
-
-            // close connection
-            serverSocket.close();
-            */
+            
             // create server socket
             ServerSocket server = new ServerSocket(satelliteInfo.getPort());
             System.out.println("[Satellite] Running on port: " + satelliteInfo.getPort());
@@ -164,8 +150,11 @@ public class Satellite extends Thread {
 
         try {
             if (toolObject == null) {
+                // Loading tool class specified
                 Class<?> toolClass = classLoader.findClass(toolClassString);
+                // Creating a new object of the tool class
                 toolObject = (Tool) toolClass.getDeclaredConstructor().newInstance();
+                // Adding object to cache for quick loading
                 toolsCache.put(toolClassString, toolObject);
             }
         } catch (Exception ex) {
